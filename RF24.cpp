@@ -20,19 +20,15 @@ RF24::~RF24() {
 
 void RF24::csn(bool mode)
 {
-	#if !defined (RF24_LINUX)
-		digitalWrite(csn_pin,mode);
-		delayMicroseconds(5);
-	#endif
-
+	digitalWrite(csn_pin,mode);
+	__usleep(5);
 }
 
 /****************************************************************************/
 
 void RF24::ce(bool level)
 {
-  //Allow for 3-pin use on ATTiny
-  if (ce_pin != csn_pin) digitalWrite(ce_pin,level);
+	digitalWrite(ce_pin,level);
 }
 
 /****************************************************************************/
@@ -324,7 +320,7 @@ void RF24::print_address_register(const char* name, uint8_t reg, uint8_t qty)
 /****************************************************************************/
 
 
-RF24::RF24(uint8_t _cepin, uint8_t _cspin, uint32_t _spi_speed, char * spiDevice):
+RF24::RF24(uint16_t _cepin, uint16_t _cspin, uint32_t _spi_speed, char * spiDevice):
   ce_pin(_cepin),csn_pin(_cspin),spi_speed(_spi_speed),p_variant(false), payload_size(32), dynamic_payloads_enabled(false),addr_width(5)//,pipe0_reading_address(0) 
 {
   pipe0_reading_address[0]=0;
@@ -475,6 +471,7 @@ bool RF24::begin(void)
 
 
 	pinMode(ce_pin,OUTPUT);
+	pinMode(csn_pin,OUTPUT);
 	ce(LOW);    
 
 	delay(100);
