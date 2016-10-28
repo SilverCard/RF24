@@ -13,7 +13,7 @@
 #define RF24_LINUX
 
 #include <stddef.h>
-#include "spi.h"
+#include "Spi.h"
 #include "gpio.h"
 #include "compatibility.h"
 #include <stdint.h>
@@ -23,8 +23,10 @@
 #include <sys/time.h>
 
 #define _BV(x) (1<<(x))
-#define _SPI spi
 
+#define rf24_max(a,b) (a>b?a:b)
+#define rf24_min(a,b) (a<b?a:b)
+  
 //#undef SERIAL_DEBUG
 #ifdef SERIAL_DEBUG
 #define IF_SERIAL_DEBUG(x) ({x;})

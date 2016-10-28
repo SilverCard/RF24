@@ -44,25 +44,30 @@
 
 using namespace std;
 
-class SPI {
+class Spi {
 public:
 	
 	/**
 	* SPI constructor
 	*/	 
-	SPI();
+	Spi(char * spiDevice, int speed);
+	
+	/**
+	* SPI constructor
+	*/	 
+	Spi(char * spiDevice);
 	
 	/**
 	* Start SPI
 	*/
-	void begin(int busNo);
+	void Init();
 	
 	/**
 	* Transfer a single byte
 	* @param tx_ Byte to send
 	* @return Data returned via spi
 	*/
-	uint8_t transfer(uint8_t tx_);
+	uint8_t Transfer(uint8_t tx_);
 	
 	/**
 	* Transfer a buffer of data
@@ -70,30 +75,28 @@ public:
 	* @param rbuf Receive buffer
 	* @param len Length of the data
 	*/
-	void transfernb(char* tbuf, char* rbuf, uint32_t len);
+	void Transfernb(char* tbuf, char* rbuf, uint32_t len);
 
 	/**
 	* Transfer a buffer of data without an rx buffer
 	* @param buf Pointer to a buffer of data
 	* @param len Length of the data
 	*/	
-	void transfern(char* buf, uint32_t len);
+	void Transfern(char* buf, uint32_t len);
 	
-	virtual ~SPI();
+	virtual ~Spi();
 
 private:
 
 	/** Default SPI device */
-	string device;
+	char * _SpiDevice;
 	/** SPI Mode set */
-	uint8_t mode;
+	uint8_t _Mode;
 	/** word size*/
-	uint8_t bits;
+	uint8_t _Bits;
 	/** Set SPI speed*/
-	uint32_t speed;
-	int fd;
-
-	void init();	
+	uint32_t _Speed;
+	int _Fd;
 };
 
 /**

@@ -17,14 +17,7 @@ REMOTE_ERROR="[ERROR] Remote machine not configured. Run configure with respecti
 include $(CONFIG_FILE)
 
 # Objects to compile
-OBJECTS=RF24.o
-ifeq ($(DRIVER), MRAA)
-OBJECTS+=spi.o gpio.o compatibility.o
-else ifeq ($(DRIVER), RPi)
-OBJECTS+=spi.o bcm2835.o interrupt.o
-else ifeq ($(DRIVER), SPIDEV)
-OBJECTS+=spi.o gpio.o compatibility.o interrupt.o
-endif
+OBJECTS=RF24.o Spi.o gpio.o compatibility.o
 
 # make all
 # reinstall the library after each recompilation
@@ -34,6 +27,7 @@ all: $(LIBNAME)
 $(LIBNAME): $(OBJECTS)
 	@echo "[Linking]"
 	$(CC) $(SHARED_LINKER_FLAGS) $(CFLAGS) -o $(LIBNAME) $^
+	ar -cvq librf24.a $^
 
 # Library parts
 RF24.o: RF24.cpp	
@@ -42,17 +36,14 @@ RF24.o: RF24.cpp
 bcm2835.o: $(DRIVER_DIR)/bcm2835.c
 	$(CC) -fPIC $(CFLAGS) -c $^
 
-spi.o: $(DRIVER_DIR)/spi.cpp
+Spi.o: Spi.cpp
 	$(CXX) -fPIC $(CFLAGS) -c $^
 
-compatibility.o: $(DRIVER_DIR)/compatibility.c
-	$(CC) -fPIC  $(CFLAGS) -c $(DRIVER_DIR)/compatibility.c
+compatibility.o: compatibility.c
+	$(CC) -fPIC  $(CFLAGS) -c compatibility.c
 
-gpio.o: $(DRIVER_DIR)/gpio.cpp
-	$(CXX) -fPIC $(CFLAGS) -c $(DRIVER_DIR)/gpio.cpp
-
-interrupt.o: $(DRIVER_DIR)/interrupt.c
-	$(CXX) -fPIC $(CFLAGS) -c $(DRIVER_DIR)/interrupt.c
+gpio.o: gpio.cpp
+	$(CXX) -fPIC $(CFLAGS) -c gpio.cpp
 	
 # clear configuration files
 cleanconfig:
@@ -62,7 +53,7 @@ cleanconfig:
 # clear build files
 clean:
 	@echo "[Cleaning]"
-	rm -rf *.o $(LIBNAME)
+	rm -rf *.o $(LIBNAME) librf24.a
 
 $(CONFIG_FILE):
 	@echo "[Running configure]"

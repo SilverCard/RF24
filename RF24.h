@@ -15,13 +15,8 @@
 #ifndef __RF24_H__
 #define __RF24_H__
 
-#include "RF24_config.h"
+#include "RF24_arch_config.h"
 
-#if defined (RF24_LINUX) || defined (LITTLEWIRE)
-  #include "utility/includes.h"
-#elif defined SOFTSPI
-  #include <DigitalIO.h>
-#endif
 
 /**
  * Power Amplifier level.
@@ -51,18 +46,8 @@ typedef enum { RF24_CRC_DISABLED = 0, RF24_CRC_8, RF24_CRC_16 } rf24_crclength_e
 class RF24
 {
 private:
-#ifdef SOFTSPI
-  SoftSPI<SOFT_SPI_MISO_PIN, SOFT_SPI_MOSI_PIN, SOFT_SPI_SCK_PIN, SPI_MODE> spi;
-#elif defined (SPI_UART)
-  SPIUARTClass uspi;
-#endif
 
-#if defined (RF24_LINUX) || defined (XMEGA_D3) /* XMEGA can use SPI class */
-  SPI spi;
-#endif
-#if defined (MRAA)
-  GPIO gpio;
-#endif
+  Spi * _Spi;
 
   uint8_t ce_pin; /**< "Chip Enable" pin, activates the RX or TX role */
   uint8_t csn_pin; /**< SPI Chip select */
@@ -108,7 +93,7 @@ public:
    * @param _cepin The pin attached to Chip Enable on the RF module
    * @param _cspin The pin attached to Chip Select
    */
-  RF24(uint8_t _cepin, uint8_t _cspin);
+  //RF24(uint8_t _cepin, uint8_t _cspin);
   //#if defined (RF24_LINUX)
   
     /**
@@ -122,12 +107,10 @@ public:
   * @param spispeed For RPi, the SPI speed in MHZ ie: BCM2835_SPI_SPEED_8MHZ
   */
   
-  RF24(uint8_t _cepin, uint8_t _cspin, uint32_t spispeed );
+  RF24(uint8_t _cepin, uint8_t _cspin, uint32_t spispeed, char * spiDevice );
   //#endif
 
-  #if defined (RF24_LINUX)
-  virtual ~RF24() {};
-  #endif
+  virtual ~RF24();
 
   /**
    * Begin operation of the chip

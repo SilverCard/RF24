@@ -7,51 +7,23 @@
  */
 
 #include "nRF24L01.h"
-#include "RF24_config.h"
 #include "RF24.h"
 
 /****************************************************************************/
 
+RF24::~RF24() {
+    if (this->_Spi)
+	{
+	    delete this->_Spi;
+	}
+}
+
 void RF24::csn(bool mode)
 {
-
-#if defined (RF24_TINY)
-	if (ce_pin != csn_pin) {
+	#if !defined (RF24_LINUX)
 		digitalWrite(csn_pin,mode);
-	} 
-	else {
-		if (mode == HIGH) {
-			PORTB |= (1<<PINB2);  	// SCK->CSN HIGH
-			delayMicroseconds(100); // allow csn to settle.
-		} 
-		else {
-			PORTB &= ~(1<<PINB2);	// SCK->CSN LOW
-			delayMicroseconds(11);  // allow csn to settle
-		}
-	}
-	// Return, CSN toggle complete
-	return;
-	
-#elif defined(ARDUINO) && !defined (RF24_SPI_TRANSACTIONS)
-	// Minimum ideal SPI bus speed is 2x data rate
-	// If we assume 2Mbs data rate and 16Mhz clock, a
-	// divider of 4 is the minimum we want.
-	// CLK:BUS 8Mhz:2Mhz, 16Mhz:4Mhz, or 20Mhz:5Mhz
-	
-      #if !defined (SOFTSPI)	
-		_SPI.setBitOrder(MSBFIRST);
-		_SPI.setDataMode(SPI_MODE0);
-		_SPI.setClockDivider(SPI_CLOCK_DIV2);
-      #endif
-#elif defined (RF24_RPi)
-      if(!mode)
-	    _SPI.chipSelect(csn_pin);
-#endif
-
-#if !defined (RF24_LINUX)
-	digitalWrite(csn_pin,mode);
-	delayMicroseconds(5);
-#endif
+		delayMicroseconds(5);
+	#endif
 
 }
 
@@ -66,9 +38,6 @@ void RF24::ce(bool level)
 /****************************************************************************/
 
   inline void RF24::beginTransaction() {
-    #if defined (RF24_SPI_TRANSACTIONS)
-    _SPI.beginTransaction(SPISettings(RF24_SPI_SPEED, MSBFIRST, SPI_MODE0));
-	#endif
     csn(LOW);
   }
 
@@ -76,9 +45,6 @@ void RF24::ce(bool level)
 
   inline void RF24::endTransaction() {
     csn(HIGH);
-	#if defined (RF24_SPI_TRANSACTIONS)
-    _SPI.endTransaction();
-	#endif
   }
 
 /****************************************************************************/
@@ -87,7 +53,6 @@ uint8_t RF24::read_register(uint8_t reg, uint8_t* buf, uint8_t len)
 {
   uint8_t status;
 
-  #if defined (RF24_LINUX)
   beginTransaction(); //configures the spi settings for RPi, locks mutex and setting csn low
   uint8_t * prx = spi_rxbuff;
   uint8_t * ptx = spi_txbuff;
@@ -97,7 +62,7 @@ uint8_t RF24::read_register(uint8_t reg, uint8_t* buf, uint8_t len)
 
   while (len--){ *ptx++ = NOP; } // Dummy operation, just for reading
   
-  _SPI.transfernb( (char *) spi_txbuff, (char *) spi_rxbuff, size);
+  this->_Spi->Transfernb( (char *) spi_txbuff, (char *) spi_rxbuff, size);
   
   status = *prx++; // status is 1st byte of receive buffer
 
@@ -105,16 +70,7 @@ uint8_t RF24::read_register(uint8_t reg, uint8_t* buf, uint8_t len)
   while ( --size ){ *buf++ = *prx++; } 
   endTransaction(); //unlocks mutex and setting csn high
 
-#else
 
-  beginTransaction();
-  status = _SPI.transfer( R_REGISTER | ( REGISTER_MASK & reg ) );
-  while ( len-- ){
-    *buf++ = _SPI.transfer(0xff);
-  }
-  endTransaction();
-
-#endif
 
   return status;
 }
@@ -123,9 +79,7 @@ uint8_t RF24::read_register(uint8_t reg, uint8_t* buf, uint8_t len)
 
 uint8_t RF24::read_register(uint8_t reg)
 {
-  uint8_t result;
-  
-  #if defined (RF24_LINUX)
+  uint8_t result; 
 	
   beginTransaction();
   
@@ -134,18 +88,11 @@ uint8_t RF24::read_register(uint8_t reg)
   *ptx++ = ( R_REGISTER | ( REGISTER_MASK & reg ) );
   *ptx++ = NOP ; // Dummy operation, just for reading
   
-  _SPI.transfernb( (char *) spi_txbuff, (char *) spi_rxbuff, 2);
+  this->_Spi->Transfernb( (char *) spi_txbuff, (char *) spi_rxbuff, 2);
   result = *++prx;   // result is 2nd byte of receive buffer
   
-  endTransaction();
-  #else
+  endTransaction(); 
 
-  beginTransaction();
-  _SPI.transfer( R_REGISTER | ( REGISTER_MASK & reg ) );
-  result = _SPI.transfer(0xff);
-  endTransaction();
-
-  #endif
 
   return result;
 }
@@ -156,7 +103,6 @@ uint8_t RF24::write_register(uint8_t reg, const uint8_t* buf, uint8_t len)
 {
   uint8_t status;
 
-  #if defined (RF24_LINUX) 
   beginTransaction();
   uint8_t * prx = spi_rxbuff;
   uint8_t * ptx = spi_txbuff;
@@ -166,18 +112,10 @@ uint8_t RF24::write_register(uint8_t reg, const uint8_t* buf, uint8_t len)
   while ( len-- )
     *ptx++ = *buf++;
   
-  _SPI.transfernb( (char *) spi_txbuff, (char *) spi_rxbuff, size);
+  this->_Spi->Transfernb( (char *) spi_txbuff, (char *) spi_rxbuff, size);
   status = *prx; // status is 1st byte of receive buffer
   endTransaction();
-  #else
 
-  beginTransaction();
-  status = _SPI.transfer( W_REGISTER | ( REGISTER_MASK & reg ) );
-  while ( len-- )
-    _SPI.transfer(*buf++);
-  endTransaction();
-
-  #endif
 
   return status;
 }
@@ -190,24 +128,16 @@ uint8_t RF24::write_register(uint8_t reg, uint8_t value)
 
   IF_SERIAL_DEBUG(printf_P(PSTR("write_register(%02x,%02x)\r\n"),reg,value));
 
-  #if defined (RF24_LINUX)
+
     beginTransaction();
 	uint8_t * prx = spi_rxbuff;
 	uint8_t * ptx = spi_txbuff;
 	*ptx++ = ( W_REGISTER | ( REGISTER_MASK & reg ) );
 	*ptx = value ;	
   	
-	_SPI.transfernb( (char *) spi_txbuff, (char *) spi_rxbuff, 2);
+	this->_Spi->Transfernb( (char *) spi_txbuff, (char *) spi_rxbuff, 2);
 	status = *prx++; // status is 1st byte of receive buffer
 	endTransaction();
-  #else
-
-  beginTransaction();
-  status = _SPI.transfer( W_REGISTER | ( REGISTER_MASK & reg ) );
-  _SPI.transfer(value);
-  endTransaction();
-
-  #endif
 
   return status;
 }
@@ -225,7 +155,7 @@ uint8_t RF24::write_payload(const void* buf, uint8_t data_len, const uint8_t wri
   //printf("[Writing %u bytes %u blanks]",data_len,blank_len);
   IF_SERIAL_DEBUG( printf("[Writing %u bytes %u blanks]\n",data_len,blank_len); );
   
- #if defined (RF24_LINUX)
+
 	beginTransaction();
 	uint8_t * prx = spi_rxbuff;
 	uint8_t * ptx = spi_txbuff;
@@ -238,23 +168,11 @@ uint8_t RF24::write_payload(const void* buf, uint8_t data_len, const uint8_t wri
     while ( blank_len-- )
 	  *ptx++ =  0;
 	
-	_SPI.transfernb( (char *) spi_txbuff, (char *) spi_rxbuff, size);
+	this->_Spi->Transfernb( (char *) spi_txbuff, (char *) spi_rxbuff, size);
 	status = *prx; // status is 1st byte of receive buffer
 	endTransaction();
 
-  #else
 
-  beginTransaction();
-  status = _SPI.transfer( writeType );
-  while ( data_len-- ) {
-    _SPI.transfer(*current++);
-  }
-  while ( blank_len-- ) {
-    _SPI.transfer(0);
-  }  
-  endTransaction();
-
-  #endif
 
   return status;
 }
@@ -273,7 +191,7 @@ uint8_t RF24::read_payload(void* buf, uint8_t data_len)
 
   IF_SERIAL_DEBUG( printf("[Reading %u bytes %u blanks]\n",data_len,blank_len); );
   
-  #if defined (RF24_LINUX)
+
 	beginTransaction();
 	uint8_t * prx = spi_rxbuff;
 	uint8_t * ptx = spi_txbuff;
@@ -286,7 +204,7 @@ uint8_t RF24::read_payload(void* buf, uint8_t data_len)
 		
 	size = data_len + blank_len + 1; // Size has been lost during while, re affect
 	
-	_SPI.transfernb( (char *) spi_txbuff, (char *) spi_rxbuff, size);
+	this->_Spi->Transfernb( (char *) spi_txbuff, (char *) spi_rxbuff, size);
 	
 	status = *prx++; // 1st byte is status	
     
@@ -297,19 +215,7 @@ uint8_t RF24::read_payload(void* buf, uint8_t data_len)
       *current = *prx;
     }
 	endTransaction();
-  #else
 
-  beginTransaction();
-  status = _SPI.transfer( R_RX_PAYLOAD );
-  while ( data_len-- ) {
-    *current++ = _SPI.transfer(0xFF);
-  }
-  while ( blank_len-- ) {
-    _SPI.transfer(0xff);
-  }
-  endTransaction();
-
-  #endif
 
   return status;
 }
@@ -335,7 +241,7 @@ uint8_t RF24::spiTrans(uint8_t cmd){
   uint8_t status;
   
   beginTransaction();
-  status = _SPI.transfer( cmd );
+  status = this->_Spi->Transfer( cmd );
   endTransaction();
   
   return status;
@@ -413,24 +319,18 @@ void RF24::print_address_register(const char* name, uint8_t reg, uint8_t qty)
   printf_P(PSTR("\r\n"));
 }
 #endif
-/****************************************************************************/
 
-RF24::RF24(uint8_t _cepin, uint8_t _cspin):
-  ce_pin(_cepin), csn_pin(_cspin), p_variant(false),
-  payload_size(32), dynamic_payloads_enabled(false), addr_width(5)//,pipe0_reading_address(0)
-{
-  pipe0_reading_address[0]=0;
-}
 
 /****************************************************************************/
 
-#if defined (RF24_LINUX) && !defined (MRAA)//RPi constructor
-RF24::RF24(uint8_t _cepin, uint8_t _cspin, uint32_t _spi_speed):
+
+RF24::RF24(uint8_t _cepin, uint8_t _cspin, uint32_t _spi_speed, char * spiDevice):
   ce_pin(_cepin),csn_pin(_cspin),spi_speed(_spi_speed),p_variant(false), payload_size(32), dynamic_payloads_enabled(false),addr_width(5)//,pipe0_reading_address(0) 
 {
   pipe0_reading_address[0]=0;
+  this->_Spi = new Spi(spiDevice, _spi_speed);
 }
-#endif
+
 
 /****************************************************************************/
 
@@ -570,60 +470,16 @@ void RF24::printDetails(void)
 
 bool RF24::begin(void)
 {
-
+  this->_Spi->Init();
   uint8_t setup=0;
 
-  #if defined (RF24_LINUX)
-
-	#if defined (MRAA)
-	  GPIO();	
-	  gpio.begin(ce_pin,csn_pin);	
-	#endif
-	
-    #ifdef RF24_RPi
-	  switch(csn_pin){     //Ensure valid hardware CS pin
-	    case 0: break;
-	    case 1: break;
-	    // Allow BCM2835 enums for RPi
-	    case 8: csn_pin = 0; break;
-	    case 7: csn_pin = 1; break;
-	    default: csn_pin = 0; break;
-	  }
-    #endif
-	
-    _SPI.begin(csn_pin);
 
 	pinMode(ce_pin,OUTPUT);
 	ce(LOW);    
 
 	delay(100);
   
-  #elif defined(LITTLEWIRE)
-    pinMode(csn_pin,OUTPUT);
-    _SPI.begin();
-    csn(HIGH);
-  #elif defined(XMEGA_D3)
-	if (ce_pin != csn_pin) pinMode(ce_pin,OUTPUT);
-	_SPI.begin(csn_pin);
-	ce(LOW);
-	csn(HIGH);
-	delay(200);
-  #else
-    // Initialize pins
-    if (ce_pin != csn_pin) pinMode(ce_pin,OUTPUT);  
-  
-    #if ! defined(LITTLEWIRE)
-      if (ce_pin != csn_pin)
-    #endif
-        pinMode(csn_pin,OUTPUT);
-    
-    _SPI.begin();
-    ce(LOW);
-  	csn(HIGH);
-  	#if defined (__ARDUINO_X86__)
-		delay(100);
-  	#endif
-  #endif //Linux
+ 
 
   // Must allow the radio time to settle else configuration bits will not necessarily stick.
   // This is actually only required following power up but some settling time also appears to
@@ -737,13 +593,6 @@ void RF24::stopListening(void)
   //flush_rx();
   write_register(NRF_CONFIG, ( read_register(NRF_CONFIG) ) & ~_BV(PRIM_RX) );
  
-  #if defined (RF24_TINY) || defined (LITTLEWIRE)
-  // for 3 pins solution TX mode is only left with additonal powerDown/powerUp cycle
-  if (ce_pin == csn_pin) {
-    powerDown();
-	powerUp();
-  }
-  #endif
   write_register(EN_RXADDR,read_register(EN_RXADDR) | _BV(pgm_read_byte(&child_pipe_enable[0]))); // Enable RX on pipe0
   
   //delayMicroseconds(100);
@@ -1041,13 +890,13 @@ uint8_t RF24::getDynamicPayloadSize(void)
   spi_txbuff[0] = R_RX_PL_WID;
   spi_rxbuff[1] = 0xff;
   beginTransaction();
-  _SPI.transfernb( (char *) spi_txbuff, (char *) spi_rxbuff, 2);
+  this->_Spi->Transfernb( (char *) spi_txbuff, (char *) spi_rxbuff, 2);
   result = spi_rxbuff[1];  
   endTransaction();
   #else
   beginTransaction();
-  _SPI.transfer( R_RX_PL_WID );
-  result = _SPI.transfer(0xff);
+  this->_Spi->Transfer( R_RX_PL_WID );
+  result = this->_Spi->Transfer(0xff);
   endTransaction();
   #endif
 
@@ -1225,8 +1074,8 @@ void RF24::closeReadingPipe( uint8_t pipe )
 void RF24::toggle_features(void)
 {
     beginTransaction();
-	_SPI.transfer( ACTIVATE );
-    _SPI.transfer( 0x73 );
+	this->_Spi->Transfer( ACTIVATE );
+    this->_Spi->Transfer( 0x73 );
 	endTransaction();
 }
 
@@ -1286,6 +1135,8 @@ void RF24::enableDynamicAck(void){
 
 }
 
+
+
 /****************************************************************************/
 
 void RF24::writeAckPayload(uint8_t pipe, const void* buf, uint8_t len)
@@ -1303,14 +1154,14 @@ void RF24::writeAckPayload(uint8_t pipe, const void* buf, uint8_t len)
       *ptx++ =  *current++;
     }
 	
-    _SPI.transfern( (char *) spi_txbuff, size);
+    this->_Spi->Transfern( (char *) spi_txbuff, size);
 	endTransaction();
   #else
   beginTransaction();
-  _SPI.transfer(W_ACK_PAYLOAD | ( pipe & 0b111 ) );
+  this->_Spi->Transfer(W_ACK_PAYLOAD | ( pipe & 0b111 ) );
 
   while ( data_len-- )
-    _SPI.transfer(*current++);
+    this->_Spi->Transfer(*current++);
   endTransaction();
   	
   #endif  
@@ -1534,63 +1385,3 @@ void RF24::setRetries(uint8_t delay, uint8_t count)
 }
 
 
-//ATTiny support code pulled in from https://github.com/jscrane/RF24
-
-#if defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__)
-// see http://gammon.com.au/spi
-#	define DI   0  // D0, pin 5  Data In
-#	define DO   1  // D1, pin 6  Data Out (this is *not* MOSI)
-#	define USCK 2  // D2, pin 7  Universal Serial Interface clock
-#	define SS   3  // D3, pin 2  Slave Select
-#elif defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
-// these depend on the core used (check pins_arduino.h)
-// this is for jeelabs' one (based on google-code core)
-#	define DI   4   // PA6
-#	define DO   5   // PA5
-#	define USCK 6   // PA4
-#	define SS   3   // PA7
-#elif defined(__AVR_ATtiny2313__) || defined(__AVR_ATtiny4313__)
-// these depend on the core used (check pins_arduino.h)
-// tested with google-code core
-#	define DI   14  // PB5
-#	define DO   15  // PB6
-#	define USCK 16  // PB7
-#	define SS   13  // PB4
-#elif defined(__AVR_ATtiny861__)
-// these depend on the core used (check pins_arduino.h)
-// tested with google-code core
-#    define DI   9   // PB0
-#    define DO   8   // PB1
-#    define USCK 7   // PB2
-#    define SS   6   // PB3
-#endif
-
-#if defined(RF24_TINY)
-
-void SPIClass::begin() {
-
-  pinMode(USCK, OUTPUT);
-  pinMode(DO, OUTPUT);
-  pinMode(DI, INPUT);
-  USICR = _BV(USIWM0);
-
-}
-
-byte SPIClass::transfer(byte b) {
-
-  USIDR = b;
-  USISR = _BV(USIOIF);
-  do
-    USICR = _BV(USIWM0) | _BV(USICS1) | _BV(USICLK) | _BV(USITC);
-  while ((USISR & _BV(USIOIF)) == 0);
-  return USIDR;
-
-}
-
-void SPIClass::end() {}
-void SPIClass::setDataMode(uint8_t mode){}
-void SPIClass::setBitOrder(uint8_t bitOrder){}
-void SPIClass::setClockDivider(uint8_t rate){}
-
-
-#endif
