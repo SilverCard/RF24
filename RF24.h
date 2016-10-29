@@ -16,7 +16,9 @@
 #define __RF24_H__
 
 #include "RF24_arch_config.h"
-
+#include <stddef.h>
+#include <time.h>
+#include <sys/time.h>
 
 /**
  * Power Amplifier level.
@@ -51,7 +53,6 @@ private:
 
   uint16_t ce_pin; /**< "Chip Enable" pin, activates the RX or TX role */
   uint16_t csn_pin; /**< SPI Chip select */
-  uint16_t spi_speed; /**< SPI Bus Speed */
   uint8_t spi_rxbuff[32+1] ; //SPI receive buffer (payload max 32 bytes)
   uint8_t spi_txbuff[32+1] ; //SPI transmit buffer (payload max 32 bytes + 1 byte for the command)
   bool p_variant; /* False for RF24L01 and true for RF24L01P */
@@ -74,6 +75,9 @@ protected:
   inline void endTransaction();
 
 public:
+
+	static void msleep(int milisec);
+	static void usleep(int microsec);
 
   /**
    * @name Primary public interface
@@ -105,7 +109,7 @@ public:
   * @param spispeed For RPi, the SPI speed in MHZ ie: BCM2835_SPI_SPEED_8MHZ
   */
   
-  RF24(uint8_t _cepin, uint8_t _cspin, uint32_t spispeed, char * spiDevice );
+  RF24(uint16_t _cepin, uint16_t _cspin, uint32_t spispeed, char * spiDevice );
   //#endif
 
   virtual ~RF24();

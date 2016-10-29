@@ -24,6 +24,21 @@ void RF24::csn(bool mode)
 	__usleep(5);
 }
 
+
+void RF24::msleep(int milisec) { 
+	struct timespec req = {0};
+	req.tv_sec = 0;
+	req.tv_nsec = milisec * 1000000L;
+	nanosleep(&req, (struct timespec *)NULL);	
+}
+
+void RF24::usleep(int microsec) { 
+	struct timespec req = {0};
+	req.tv_sec = 0;
+	req.tv_nsec = microsec * 1000000L;
+	nanosleep(&req, (struct timespec *)NULL);	
+}
+
 /****************************************************************************/
 
 void RF24::ce(bool level)
@@ -321,7 +336,7 @@ void RF24::print_address_register(const char* name, uint8_t reg, uint8_t qty)
 
 
 RF24::RF24(uint16_t _cepin, uint16_t _cspin, uint32_t _spi_speed, char * spiDevice):
-  ce_pin(_cepin),csn_pin(_cspin),spi_speed(_spi_speed),p_variant(false), payload_size(32), dynamic_payloads_enabled(false),addr_width(5)//,pipe0_reading_address(0) 
+  ce_pin(_cepin),csn_pin(_cspin),p_variant(false), payload_size(32), dynamic_payloads_enabled(false),addr_width(5)//,pipe0_reading_address(0) 
 {
   pipe0_reading_address[0]=0;
   this->_Spi = new Spi(spiDevice, _spi_speed);
@@ -407,39 +422,6 @@ static const char * const rf24_csn_e_str_P[] = {
 
 void RF24::printDetails(void)
 {
-
-#if defined (RF24_RPi)
-  printf("================ SPI Configuration ================\n" );
-  if (csn_pin < BCM2835_SPI_CS_NONE ){
-    printf("CSN Pin  \t = %s\n",rf24_csn_e_str_P[csn_pin]);
-  }else{
-    printf("CSN Pin  \t = Custom GPIO%d%s\n", csn_pin,
-    csn_pin==RPI_V2_GPIO_P1_26 ? " (CE1) Software Driven" : "" );
-  }
-  printf("CE Pin  \t = Custom GPIO%d\n", ce_pin );
-  printf("Clock Speed\t = " );
-	switch (spi_speed)
-	{
-		case BCM2835_SPI_SPEED_64MHZ : printf("64 Mhz");	break ;
-		case BCM2835_SPI_SPEED_32MHZ : printf("32 Mhz");	break ;
-		case BCM2835_SPI_SPEED_16MHZ : printf("16 Mhz");	break ;
-		case BCM2835_SPI_SPEED_8MHZ  : printf("8 Mhz");	break ;
-		case BCM2835_SPI_SPEED_4MHZ  : printf("4 Mhz");	break ;
-		case BCM2835_SPI_SPEED_2MHZ  : printf("2 Mhz");	break ;
-		case BCM2835_SPI_SPEED_1MHZ  : printf("1 Mhz");	break ;
-		case BCM2835_SPI_SPEED_512KHZ: printf("512 KHz");	break ;
-		case BCM2835_SPI_SPEED_256KHZ: printf("256 KHz");	break ;
-		case BCM2835_SPI_SPEED_128KHZ: printf("128 KHz");	break ;
-		case BCM2835_SPI_SPEED_64KHZ : printf("64 KHz");	break ;
-		case BCM2835_SPI_SPEED_32KHZ : printf("32 KHz");	break ;
-		case BCM2835_SPI_SPEED_16KHZ : printf("16 KHz");	break ;
-		case BCM2835_SPI_SPEED_8KHZ  : printf("8 KHz");	break ;
-		default : printf("8 Mhz");	break ;
-	}
-	printf("\n================ NRF Configuration ================\n");
- 
-#endif //Linux
-
   print_status(get_status());
 
   print_address_register(PSTR("RX_ADDR_P0-1"),RX_ADDR_P0,2);
