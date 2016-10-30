@@ -1,19 +1,16 @@
 #include <RF24.h>
 
-
-
-
 int main(int argc, char** argv)
 {
-	if(argc >= 3)
+	if(argc >= 4)
 	{
-
-		int pin = atoi(argv[1]);		
-		char * spiDevice = argv[2];
+		int cePin = atoi(argv[1]);		
+		int csnPin = atoi(argv[2]);	
+		char * spiDevice = argv[3];
 		
-		printf("Testing device %s with pin %i.\n", spiDevice, pin);
+		printf("Testing on spi device %s with CePin %i CsnPin %i.\n", spiDevice, cePin, csnPin );
 		
-		RF24 * radio = new RF24(pin, 0, 8000000, spiDevice);
+		RF24 * radio = new RF24(cePin, csnPin, 8000000, spiDevice);
 		
 		radio->begin();
 		radio->setPayloadSize(4);
@@ -25,12 +22,10 @@ int main(int argc, char** argv)
 		radio->startListening();
 		radio->printDetails();
 
-		delete radio;
-		
-		
+		delete radio;				
 	}
 	else
 	{
-		printf("Command line is Tester pin /dev/spidevX.X");
+		printf("Command line is Tester CePin CsnPin /dev/spidevX.X\n");
 	}
 }
