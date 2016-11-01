@@ -14,6 +14,8 @@ version.h
 Session.vim
 *.so
 *.so.*
+*.a
+*.a.*
 *.dylib
 *.dylib.*
 .DS_Store
