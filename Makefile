@@ -11,13 +11,32 @@
 # use make all and make install to install the library 
 #
 
-CONFIG_FILE=Makefile.inc
-REMOTE_ERROR="[ERROR] Remote machine not configured. Run configure with respective arguments."
-
-include $(CONFIG_FILE)
+OS=LINUX
+SOC=A20
+DRIVER=SPIDEV
+CPUFLAGS=-march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard
+CFLAGS=-march=armv7-a -std=c++11 -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -Ofast -Wall -pthread
+PREFIX=/usr/local
+REMOTE_PREFIX=/usr/local
+LIB=rf24
+LIBNAME=librf24.so.
+LIBDEPRECATE=librf24-bcm.so
+CC=arm-linux-gnueabihf-gcc
+CXX=arm-linux-gnueabihf-g++
+LIB_DIR=/usr/local/lib
+REMOTE_LIB_DIR=/usr/local/lib
+HEADER_DIR=/usr/local/include/RF24
+REMOTE_HEADER_DIR=/usr/local/include/RF24
+DRIVER_DIR=utility/SPIDEV
+ARCH_DIR=utility
+SHARED_LINKER_FLAGS= -pthread -shared -Wl,-soname,librf24.so.
+LDCONFIG=ldconfig
+REMOTE_LDCONFIG=/sbin/ldconfig
+EXAMPLES_DIR=/usr/local/bin
+REMOTE_EXAMPLES_DIR=/usr/local/bin
 
 # Objects to compile
-OBJECTS=RF24.o Spi.o gpio.o compatibility.o
+OBJECTS=RF24.o Spi.o gpio.o
 
 # make all
 # reinstall the library after each recompilation
@@ -39,16 +58,10 @@ bcm2835.o: $(DRIVER_DIR)/bcm2835.c
 Spi.o: Spi.cpp
 	$(CXX) -fPIC $(CFLAGS) -c $^
 
-compatibility.o: compatibility.c
-	$(CC) -fPIC  $(CFLAGS) -c compatibility.c
-
 gpio.o: gpio.cpp
 	$(CXX) -fPIC $(CFLAGS) -c gpio.cpp
 	
 # clear configuration files
-cleanconfig:
-	@echo "[Cleaning configuration]"
-	rm -rf $(CONFIG_FILE) utility/includes.h
 
 # clear build files
 clean:

@@ -1,1 +1,1 @@
-g++ -o Tester -I .. Tester.cpp ../librf24.a 
+g++ -o -std=c++11 Tester -I .. Tester.cpp ../librf24.a 

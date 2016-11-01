@@ -61,7 +61,7 @@ private:
   uint8_t pipe0_reading_address[5]; /**< Last address set on pipe 0 for reading. */
   uint8_t addr_width; /**< The address width to use - 3,4 or 5 bytes. */
   uint32_t txRxDelay; /**< Var for adjusting delays depending on datarate */
-  
+  long millis();
 
 protected:
   /**
@@ -71,13 +71,9 @@ protected:
    *
    */
   inline void beginTransaction();
-
   inline void endTransaction();
 
 public:
-
-	static void msleep(int milisec);
-	static void usleep(int microsec);
 
   /**
    * @name Primary public interface

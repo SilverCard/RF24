@@ -21,22 +21,7 @@ RF24::~RF24() {
 void RF24::csn(bool mode)
 {
 	digitalWrite(csn_pin,mode);
-	__usleep(5);
-}
-
-
-void RF24::msleep(int milisec) { 
-	struct timespec req = {0};
-	req.tv_sec = 0;
-	req.tv_nsec = milisec * 1000000L;
-	nanosleep(&req, (struct timespec *)NULL);	
-}
-
-void RF24::usleep(int microsec) { 
-	struct timespec req = {0};
-	req.tv_sec = 0;
-	req.tv_nsec = microsec * 1000000L;
-	nanosleep(&req, (struct timespec *)NULL);	
+	delayMicroseconds(5);
 }
 
 /****************************************************************************/
@@ -48,7 +33,17 @@ void RF24::ce(bool level)
 
 /****************************************************************************/
 
-  inline void RF24::beginTransaction() {
+long RF24::millis()
+{
+	gettimeofday(&end, NULL);
+	seconds = end.tv_sec - start.tv_sec;
+	useconds = end.tv_usec - start.tv_usec;
+
+	mtime = ((seconds)* 1000 + useconds / 1000.0) + 0.5;
+	return mtime;
+}
+
+inline void RF24::beginTransaction() {
     csn(LOW);
   }
 

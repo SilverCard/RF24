@@ -10,8 +10,6 @@
 
 #include "Spi.h"
 
-#include <pthread.h>
-static pthread_mutex_t spiMutex;
 
 Spi::Spi(char * spiDevice, int speed):_Fd(-1) {
 	this->_SpiDevice = spiDevice;
@@ -82,7 +80,6 @@ void Spi::Init()
 
 uint8_t Spi::Transfer(uint8_t tx_)
 {
-    pthread_mutex_lock (&spiMutex);
 	int ret;
   	uint8_t tx[1] = {tx_};
 	uint8_t rx[1];
@@ -102,19 +99,16 @@ uint8_t Spi::Transfer(uint8_t tx_)
 	ret = ioctl(this->_Fd, SPI_IOC_MESSAGE(1), &tr);
 	if (ret < 1)
 	{
-        pthread_mutex_unlock (&spiMutex);
 		perror("can't send spi message");
 		abort();		
 	}
 
-    pthread_mutex_unlock (&spiMutex);
 	return rx[0];
 }
 
 //void bcm2835_spi_transfernb(char* tbuf, char* rbuf, uint32_t len)
 void Spi::Transfernb(char* tbuf, char* rbuf, uint32_t len)
 {	
-	pthread_mutex_lock (&spiMutex);
 	int ret;
 
 	struct spi_ioc_transfer tr = {
@@ -131,11 +125,9 @@ void Spi::Transfernb(char* tbuf, char* rbuf, uint32_t len)
 	ret = ioctl(this->_Fd, SPI_IOC_MESSAGE(1), &tr);
 	if (ret < 1)
 	{
-        pthread_mutex_unlock (&spiMutex);
 		perror("can't send spi message");
 		abort();		
 	}
-    pthread_mutex_unlock (&spiMutex);
 	//return rx[0];
 }
 
