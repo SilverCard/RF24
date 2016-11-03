@@ -25,7 +25,7 @@ void Spi::Init()
 	this->_Fd = open(this->_SpiDevice, O_RDWR);
     if (this->_Fd < 0)
     {
-        std::runtime_error("Can't open spi device.");
+        throw "Can't open spi device.";
     }   
 
 	/*

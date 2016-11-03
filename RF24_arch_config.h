@@ -22,14 +22,11 @@
 #include <sys/time.h>
 #include <chrono>
 #include <thread>
-#include <algorithm>
-#include <iostream>
-#include <string>
 
 #define _BV(x) (1<<(x))
 
-#define rf24_max(a,b) std::max(a,b)
-#define rf24_min(a,b) std::min(a,b)
+#define rf24_max(a,b) (a>b?a:b)
+#define rf24_min(a,b) (a<b?a:b)
   
 //#undef SERIAL_DEBUG
 #ifdef SERIAL_DEBUG
