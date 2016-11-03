@@ -1,11 +1,6 @@
 /* 
  * File:   spi.cpp
- * Author: Purinda Gunasekara <purinda@gmail.com>
- * 
- * Created on 24 June 2012, 11:00 AM
- * 
- * Inspired from spidev test in linux kernel documentation
- * www.kernel.org/doc/Documentation/spi/spidev_test.c 
+ * Original Author: Purinda Gunasekara <purinda@gmail.com> 
  */
 
 #include "Spi.h"
@@ -39,13 +34,13 @@ void Spi::Init()
 	ret = ioctl(this->_Fd, SPI_IOC_WR_MODE, &this->_Mode);
 	if (ret == -1)
 	{
-		throw "can't set spi mode";		
+		throw std::runtime_error("Can't set spi mode.");
 	}
 
 	ret = ioctl(this->_Fd, SPI_IOC_RD_MODE, &this->_Mode);
 	if (ret == -1)
 	{
-		throw "can't set spi mode";		
+		throw std::runtime_error("Can't set spi mode.");
 	}
 	
 	/*
@@ -54,13 +49,13 @@ void Spi::Init()
 	ret = ioctl(this->_Fd, SPI_IOC_WR_BITS_PER_WORD, &this->_Bits);
 	if (ret == -1)
 	{
-		throw "can't set bits per word";			
+		throw std::runtime_error("Can't set bits per word.");
 	}
 
 	ret = ioctl(this->_Fd, SPI_IOC_RD_BITS_PER_WORD, &this->_Bits);
 	if (ret == -1)
 	{
-		throw "can't set bits per word";					
+		throw std::runtime_error("Can't set bits per word.");
 	}
 	/*
 	 * max speed hz
@@ -68,13 +63,13 @@ void Spi::Init()
 	ret = ioctl(this->_Fd, SPI_IOC_WR_MAX_SPEED_HZ, &this->_Speed);
 	if (ret == -1)
 	{
-		throw "can't set max speed hz";						
+		throw std::runtime_error("Can't set max speed hz.");
 	}
 
 	ret = ioctl(this->_Fd, SPI_IOC_RD_MAX_SPEED_HZ, &this->_Speed);
 	if (ret == -1)
 	{
-		throw "can't set max speed hz";					
+		throw std::runtime_error("Can't set max speed hz.");					
 	}
 }
 
@@ -99,8 +94,7 @@ uint8_t Spi::Transfer(uint8_t tx_)
 	ret = ioctl(this->_Fd, SPI_IOC_MESSAGE(1), &tr);
 	if (ret < 1)
 	{
-		perror("can't send spi message");
-		abort();		
+		throw std::runtime_error("Can't send spi message.");	
 	}
 
 	return rx[0];
@@ -125,7 +119,7 @@ void Spi::Transfernb(char* tbuf, char* rbuf, uint32_t len)
 	ret = ioctl(this->_Fd, SPI_IOC_MESSAGE(1), &tr);
 	if (ret < 1)
 	{
-		perror("can't send spi message");
+		throw std::runtime_error("Can't send spi message.");
 		abort();		
 	}
 	//return rx[0];

@@ -13,6 +13,7 @@
 #define	H
 
 #include <cstdio>
+#include <stdexcept>
 
 /**
  * @file gpio.h

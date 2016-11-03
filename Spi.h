@@ -34,6 +34,7 @@
 #include <inttypes.h>
 #include <linux/types.h>
 #include <linux/spi/spidev.h>
+#include <stdexcept>
 
 #ifndef RF24_SPIDEV_SPEED
 /* 8MHz as default */

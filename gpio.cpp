@@ -34,7 +34,7 @@ void GPIO::open(int port, int DDR)
         sleep(1);
         counter++;
         if(counter > 10){
-          perror("Could not open /sys/class/gpio/gpio%d/direction");
+			throw std::runtime_error("Could not open /sys/class/gpio/gpio%d/direction");
           exit(0);
         }
     }
