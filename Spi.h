@@ -1,8 +1,6 @@
 /* 
  * File:   spi.h
- * Author: Purinda Gunasekara <purinda@gmail.com>
- * 
- * Created on 24 June 2012, 11:00 AM
+ * original Author: Purinda Gunasekara <purinda@gmail.com>
  */
 
 #ifndef SPI_H

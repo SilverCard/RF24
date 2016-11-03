@@ -289,11 +289,9 @@ void RF24::print_byte_register(const char* name, uint8_t reg, uint8_t qty)
 {
 	//char extra_tab = strlen_P(name) < 8 ? '\t' : 0;
 	//printf_P(PSTR(PRIPSTR"\t%c ="),name,extra_tab);
-#if defined (RF24_LINUX)
+
 	printf("%s\t =", name);
-#else
-	printf_P(PSTR(PRIPSTR"\t ="), name);
-#endif
+
 	while (qty--)
 		printf_P(PSTR(" 0x%02x"), read_register(reg++));
 	printf_P(PSTR("\r\n"));
@@ -304,11 +302,8 @@ void RF24::print_byte_register(const char* name, uint8_t reg, uint8_t qty)
 void RF24::print_address_register(const char* name, uint8_t reg, uint8_t qty)
 {
 
-#if defined (RF24_LINUX)
 	printf("%s\t =", name);
-#else
-	printf_P(PSTR(PRIPSTR"\t ="), name);
-#endif
+
 	while (qty--)
 	{
 		uint8_t buffer[addr_width];
@@ -856,19 +851,12 @@ uint8_t RF24::getDynamicPayloadSize(void)
 {
 	uint8_t result = 0;
 
-#if defined (RF24_LINUX)  
 	spi_txbuff[0] = R_RX_PL_WID;
 	spi_rxbuff[1] = 0xff;
 	beginTransaction();
 	this->_Spi->Transfernb((char *)spi_txbuff, (char *)spi_rxbuff, 2);
 	result = spi_rxbuff[1];
 	endTransaction();
-#else
-	beginTransaction();
-	this->_Spi->Transfer(R_RX_PL_WID);
-	result = this->_Spi->Transfer(0xff);
-	endTransaction();
-#endif
 
 	if (result > 32) { flush_rx(); delay(2); return 0; }
 	return result;
@@ -1111,10 +1099,8 @@ void RF24::enableDynamicAck(void) {
 void RF24::writeAckPayload(uint8_t pipe, const void* buf, uint8_t len)
 {
 	const uint8_t* current = reinterpret_cast<const uint8_t*>(buf);
-
 	uint8_t data_len = rf24_min(len, 32);
 
-#if defined (RF24_LINUX)
 	beginTransaction();
 	uint8_t * ptx = spi_txbuff;
 	uint8_t size = data_len + 1; // Add register value to transmit buffer
@@ -1125,15 +1111,7 @@ void RF24::writeAckPayload(uint8_t pipe, const void* buf, uint8_t len)
 
 	this->_Spi->Transfern((char *)spi_txbuff, size);
 	endTransaction();
-#else
-	beginTransaction();
-	this->_Spi->Transfer(W_ACK_PAYLOAD | (pipe & 0b111));
-
-	while (data_len--)
-		this->_Spi->Transfer(*current++);
-	endTransaction();
-
-#endif  
+  
 
 }
 
@@ -1230,21 +1208,14 @@ bool RF24::setDataRate(rf24_datarate_e speed)
 	// HIGH and LOW '00' is 1Mbs - our default
 	setup &= ~(_BV(RF_DR_LOW) | _BV(RF_DR_HIGH));
 
-#if defined(__arm__) || defined (RF24_LINUX) || defined (__ARDUINO_X86__)
 	txRxDelay = 250;
-#else //16Mhz Arduino
-	txRxDelay = 85;
-#endif
+
 	if (speed == RF24_250KBPS)
 	{
 		// Must set the RF_DR_LOW to 1; RF_DR_HIGH (used to be RF_DR) is already 0
 		// Making it '10'.
 		setup |= _BV(RF_DR_LOW);
-#if defined(__arm__) || defined (RF24_LINUX) || defined (__ARDUINO_X86__)
 		txRxDelay = 450;
-#else //16Mhz Arduino
-		txRxDelay = 155;
-#endif
 }
 	else
 	{
@@ -1253,11 +1224,7 @@ bool RF24::setDataRate(rf24_datarate_e speed)
 		if (speed == RF24_2MBPS)
 		{
 			setup |= _BV(RF_DR_HIGH);
-#if defined(__arm__) || defined (RF24_LINUX) || defined (__ARDUINO_X86__)
 			txRxDelay = 190;
-#else //16Mhz Arduino	  
-			txRxDelay = 65;
-#endif
 		}
 	}
 	write_register(RF_SETUP, setup);
