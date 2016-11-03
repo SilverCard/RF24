@@ -35,12 +35,13 @@ void RF24::ce(bool level)
 
 long RF24::millis()
 {
-	gettimeofday(&end, NULL);
-	seconds = end.tv_sec - start.tv_sec;
-	useconds = end.tv_usec - start.tv_usec;
+	struct timeval tv;
+	if(gettimeofday(&tv, NULL) != 0)
+	{
+		return 0;
+	}
 
-	mtime = ((seconds)* 1000 + useconds / 1000.0) + 0.5;
-	return mtime;
+	return (tv.tv_sec * 1000) + (tv.tv_usec / 1000);
 }
 
 inline void RF24::beginTransaction() {
