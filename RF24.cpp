@@ -21,7 +21,7 @@ RF24::~RF24() {
 void RF24::csn(bool mode)
 {
 	digitalWrite(csn_pin, mode);
-	delayMicroseconds(5);
+	delayMicroseconds(10);
 }
 
 /****************************************************************************/
